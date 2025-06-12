@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "standard_lib"
+name = "sdrap_std_lib"
 version = "0.1.0"
 authors = [{ name = "Samuel Drapeau", email = "samuel.drapeau@gmail.com" }]
 description = "A standard library of imports and configurations for personal Python projects."
@@ -18,4 +18,4 @@ classifiers = [
 dependencies = ["numpy", "pandas", "plotly", "tqdm", "kaleido", "rich"]
 
 [project.urls]
-"Homepage" = "https://github.com/sdrap/standard_lib_project" # Link to your GitHub repo
+"Homepage" = "https://github.com/sdrap/sdrap_std_lib_project" # Link to your GitHub repo

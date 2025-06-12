@@ -31,7 +31,7 @@ I use the following shortnames
 ## Usage
 
 ```
-from standard_lib import *
+from sdrap_sdt_lib import *
 
 # Now you can use the re-exported modules and variables:
 df = pd.DataFrame(...)

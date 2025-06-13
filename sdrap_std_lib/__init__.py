@@ -87,12 +87,12 @@ pio.templates["draft"].layout.height = 500
 pio.templates["draft"].layout.margin = dict(l=50, r=50, b=50, t=50, pad=4)
 pio.templates["draft"].layout.title.xanchor = "center"
 pio.templates["draft"].layout.title.x = 0.5
-pio.templates["draft"].layout.paper_bgcolor = "rgba(0,0,0,0)"
-pio.templates["draft"].layout.plot_bgcolor = "rgba(0,0,0,0)"
-
 plt_colors = px.colors.qualitative.G10
 plt_dark_color = "rgb(102, 102, 102)"
 pio.templates["draft"].layout.colorway = plt_colors
+pio.templatex["print"] = pio.templates["draft"]
+pio.templates["print"].layout.paper_bgcolor = "rgba(0,0,0,0)"
+pio.templates["print"].layout.plot_bgcolor = "rgba(0,0,0,0)"
 pio.templates.default = "plotly_white+draft"
 
 

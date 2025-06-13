@@ -31,11 +31,20 @@ from plotly.io._base_renderers import ExternalRenderer
 CHUNK_SIZE = 4096
 
 class KittyRenderer(ExternalRenderer):
+    def __init__(self, scale=2.0):
+        """
+        A high-quality Plotly renderer for the Kitty terminal using Kaleido.
+        
+        Args:
+            scale (float): The scale factor for rendering. 
+                           > 1 for high-DPI (retina) output.
+        """
+        self.scale = scale
     def render(self, fig_dict, **kwargs):
         from plotly.graph_objs._figure import Figure
         fig = Figure(fig_dict)
         try:
-            png_bytes = fig.to_image(format="png")
+            png_bytes = fig.to_image(format="png", scale=self.scale)
         except Exception as e:
             print(f"Error generating PNG for KittyRenderer (is Kaleido installed?): {e}", file=sys.stderr)
             return

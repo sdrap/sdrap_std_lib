@@ -91,8 +91,8 @@ except Exception:
 pio.templates["draft"] = go.layout.Template()
 pio.templates["draft"].layout.legend = {"orientation": "h"}
 pio.templates["draft"].layout.autosize = False
-pio.templates["draft"].layout.width = 1200
-pio.templates["draft"].layout.height = 800
+pio.templates["draft"].layout.width = 700
+pio.templates["draft"].layout.height = 500
 pio.templates["draft"].layout.margin = dict(l=50, r=50, b=50, t=50, pad=4)
 pio.templates["draft"].layout.title.xanchor = "center"
 pio.templates["draft"].layout.title.x = 0.5

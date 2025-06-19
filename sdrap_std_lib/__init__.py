@@ -9,8 +9,9 @@ from plotly.subplots import make_subplots
 from tqdm import tqdm
 
 import rich
-from rich.markdown import Markdown
+from rich.panel import Panel
 from rich.table import Table
+from rich.markdown import Markdown
 from rich.console import Console
 from rich.live import Live
 from rich import print
@@ -123,9 +124,11 @@ __all__ = [
     "KittyRenderer",
     "plt_colors",
     "plt_dark_color",
+    "rich",
+    "Panel",
+    "Markdown",
     "Table",
     "Live",
     "Console",
-    "Markdown",
     "print"
 ]

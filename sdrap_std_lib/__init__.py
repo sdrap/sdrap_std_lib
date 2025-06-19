@@ -8,8 +8,13 @@ import plotly.io as pio
 from plotly.subplots import make_subplots
 from tqdm import tqdm
 
+import rich
 from rich.markdown import Markdown
+from rich.table import Table
+from rich.console import Console
+from rich.live import Live
 from rich import print
+
 
 
 # --- Pandas Configuration ---
@@ -118,6 +123,9 @@ __all__ = [
     "KittyRenderer",
     "plt_colors",
     "plt_dark_color",
+    "Table",
+    "Live",
+    "Console",
     "Markdown",
     "print"
 ]

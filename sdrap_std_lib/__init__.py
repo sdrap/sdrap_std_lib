@@ -16,7 +16,6 @@ from rich.console import Console
 from rich.live import Live
 from rich import print
 
-
 # --- Pandas Configuration ---
 pd.set_option("display.unicode.east_asian_width", True)
 pd.set_option("display.max_rows", 100)
@@ -27,24 +26,19 @@ if not hasattr(pd.DataFrame, "_tqdm_pandas_applied"):
 
 pd.options.plotting.backend = "plotly"
 
-# --- Kitty Terminal Renderer for Plotly ---
-import sys  # sys is used by KittyRenderer and optionally for debug prints
-import os  # os is used for checking environment variables
+# --- Terminal Renderers for Plotly ---
+import sys
+import os
+import subprocess
 from base64 import b64encode
 from plotly.io._base_renderers import ExternalRenderer
 
 CHUNK_SIZE = 4096
+PLOT_FILE = "live_plot.json"  # Shared file for the Streamlit app
 
 
 class KittyRenderer(ExternalRenderer):
     def __init__(self, scale=2.0):
-        """
-        A high-quality Plotly renderer for the Kitty terminal using Kaleido.
-
-        Args:
-            scale (float): The scale factor for rendering.
-                           > 1 for high-DPI (retina) output.
-        """
         self.scale = scale
 
     def render(self, fig_dict, **kwargs):
@@ -76,14 +70,6 @@ class KittyRenderer(ExternalRenderer):
 
 class WeztermRenderer(ExternalRenderer):
     def __init__(self, scale=2.0):
-        """
-        A high-quality Plotly renderer for the Wezterm terminal using Kaleido.
-        Uses the iTerm2 Inline Images Protocol.
-
-        Args:
-            scale (float): The scale factor for rendering.
-                           > 1 for high-DPI (retina) output.
-        """
         self.scale = scale
 
     def render(self, fig_dict, **kwargs):
@@ -98,22 +84,14 @@ class WeztermRenderer(ExternalRenderer):
                 file=sys.stderr,
             )
             return
-
         data = b64encode(png_bytes).decode("ascii")
-
-        # The Wezterm/iTerm2 protocol uses a different escape sequence
-        # The `preserveAspectRatio=1` argument is key for correct display.
-        # The protocol also uses a different chunking mechanism.
         sys.stdout.write("\033]1337;File=inline=1;preserveAspectRatio=1:")
-
-        # Wezterm's protocol requires the Base64 data to be sent in chunks
         idx = 0
         while idx < len(data):
             chunk = data[idx : idx + CHUNK_SIZE]
             idx += CHUNK_SIZE
             sys.stdout.write(chunk)
-
-        sys.stdout.write("\a")  # Use `\a` (BELL) to terminate the sequence
+        sys.stdout.write("\a")
         sys.stdout.write("\n")
         sys.stdout.flush()
 
@@ -121,33 +99,41 @@ class WeztermRenderer(ExternalRenderer):
         return self.render(fig.to_dict(), **kwargs)
 
 
-# Register the KittyRenderer with Plotly so it's available for explicit use
+class StreamlitRenderer(ExternalRenderer):
+    def __init__(self):
+        pass
+
+    def render(self, fig_dict, **kwargs):
+        import json
+
+        with open(PLOT_FILE, "w") as f:
+            json.dump(fig_dict, f)
+        print(f"Plotly figure saved to '{PLOT_FILE}' for Streamlit viewer.")
+
+    def show(self, fig, **kwargs):
+        return self.render(fig.to_dict(), **kwargs)
+
+
+# Register the renderers
 pio.renderers["wezterm"] = WeztermRenderer()
 pio.renderers["kitty"] = KittyRenderer()
+pio.renderers["streamlit"] = StreamlitRenderer()
+
 
 # --- Conditionally set default renderer ---
-# If running in an IPython terminal AND it appears to be Kitty terminal,
-# set 'kitty' as the default renderer.
-# Otherwise, let Plotly (or the environment like Jupyter/VSCode) decide the default.
 try:
     from IPython import get_ipython
 
     shell = get_ipython()
-    # Check if we are in an IPython shell and it's a TerminalInteractiveShell
     if shell is not None and shell.__class__.__name__ == "TerminalInteractiveShell":
         if os.environ.get("KITTY_WINDOW_ID"):
             pio.renderers.default = "kitty"
         elif os.environ.get("WEZTERM_PANE"):
             pio.renderers.default = "wezterm"
 except (ImportError, NameError, AttributeError):
-    # IPython not available, or get_ipython issue, or shell has no __class__.
-    # Do nothing, Plotly will use its own default logic.
     pass
 except Exception:
-    # Catch any other unexpected error during detection to prevent library import failure.
-    # Do nothing, Plotly will use its own default logic.
     pass
-
 
 # --- Plotly Default Template Configuration ---
 pio.templates["draft"] = go.layout.Template()
@@ -178,6 +164,8 @@ __all__ = [
     "make_subplots",
     "tqdm",
     "KittyRenderer",
+    "WeztermRenderer",
+    "StreamlitRenderer",
     "plt_colors",
     "plt_dark_color",
     "rich",
@@ -188,3 +176,26 @@ __all__ = [
     "Console",
     "print",
 ]
+
+
+def serve_streamlit_app():
+    """
+    Launch the Streamlit app to view live plots.
+    This function should be run from the command line, not in an IPython session.
+    """
+    app_path = os.path.join(os.path.dirname(__file__), "_streamlit_viewer.py")
+    if not os.path.exists(app_path):
+        print(f"Error: Streamlit app file not found at {app_path}", file=sys.stderr)
+        sys.exit(1)
+
+    try:
+        subprocess.run(["streamlit", "run", app_path], check=True)
+    except FileNotFoundError:
+        print(
+            "Error: 'streamlit' command not found. Please install Streamlit.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    except subprocess.CalledProcessError as e:
+        print(f"Error starting Streamlit app: {e}", file=sys.stderr)
+        sys.exit(1)

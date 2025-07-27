@@ -15,7 +15,16 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
 ]
-dependencies = ["numpy", "pandas", "plotly", "tqdm", "kaleido", "rich"]
+dependencies = [
+    "numpy", 
+    "pandas", 
+    "plotly", 
+    "tqdm", 
+    "kaleido", 
+    "rich", 
+    "streamlit"
+]
 
 [project.urls]
-"Homepage" = "https://github.com/sdrap/sdrap_std_lib_project" # Link to your GitHub repo
+"Homepage" = "https://github.com/sdrap/sdrap_std_lib_project"
+

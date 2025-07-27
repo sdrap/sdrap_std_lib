@@ -17,48 +17,53 @@ from rich.live import Live
 from rich import print
 
 
-
 # --- Pandas Configuration ---
 pd.set_option("display.unicode.east_asian_width", True)
 pd.set_option("display.max_rows", 100)
 
-if not hasattr(pd.DataFrame, '_tqdm_pandas_applied'):
+if not hasattr(pd.DataFrame, "_tqdm_pandas_applied"):
     tqdm.pandas(desc="my bar!")
     pd.DataFrame._tqdm_pandas_applied = True
 
 pd.options.plotting.backend = "plotly"
 
 # --- Kitty Terminal Renderer for Plotly ---
-import sys # sys is used by KittyRenderer and optionally for debug prints
+import sys  # sys is used by KittyRenderer and optionally for debug prints
 import os  # os is used for checking environment variables
 from base64 import b64encode
 from plotly.io._base_renderers import ExternalRenderer
 
 CHUNK_SIZE = 4096
 
+
 class KittyRenderer(ExternalRenderer):
     def __init__(self, scale=2.0):
         """
         A high-quality Plotly renderer for the Kitty terminal using Kaleido.
-        
+
         Args:
-            scale (float): The scale factor for rendering. 
+            scale (float): The scale factor for rendering.
                            > 1 for high-DPI (retina) output.
         """
         self.scale = scale
+
     def render(self, fig_dict, **kwargs):
         from plotly.graph_objs._figure import Figure
+
         fig = Figure(fig_dict)
         try:
             png_bytes = fig.to_image(format="png", scale=self.scale)
         except Exception as e:
-            print(f"Error generating PNG for KittyRenderer (is Kaleido installed?): {e}", file=sys.stderr)
+            print(
+                f"Error generating PNG for KittyRenderer (is Kaleido installed?): {e}",
+                file=sys.stderr,
+            )
             return
 
         data = b64encode(png_bytes).decode("ascii")
         idx = 0
         while idx < len(data):
-            chunk = data[idx:idx + CHUNK_SIZE]
+            chunk = data[idx : idx + CHUNK_SIZE]
             idx += CHUNK_SIZE
             more_data = 1 if idx < len(data) else 0
             sys.stdout.write(f"\033_Gf=100,a=T,m={more_data};{chunk}\033\\")
@@ -68,7 +73,56 @@ class KittyRenderer(ExternalRenderer):
     def show(self, fig, **kwargs):
         return self.render(fig.to_dict(), **kwargs)
 
+
+class WeztermRenderer(ExternalRenderer):
+    def __init__(self, scale=2.0):
+        """
+        A high-quality Plotly renderer for the Wezterm terminal using Kaleido.
+        Uses the iTerm2 Inline Images Protocol.
+
+        Args:
+            scale (float): The scale factor for rendering.
+                           > 1 for high-DPI (retina) output.
+        """
+        self.scale = scale
+
+    def render(self, fig_dict, **kwargs):
+        from plotly.graph_objs._figure import Figure
+
+        fig = Figure(fig_dict)
+        try:
+            png_bytes = fig.to_image(format="png", scale=self.scale)
+        except Exception as e:
+            print(
+                f"Error generating PNG for WeztermRenderer (is Kaleido installed?): {e}",
+                file=sys.stderr,
+            )
+            return
+
+        data = b64encode(png_bytes).decode("ascii")
+
+        # The Wezterm/iTerm2 protocol uses a different escape sequence
+        # The `preserveAspectRatio=1` argument is key for correct display.
+        # The protocol also uses a different chunking mechanism.
+        sys.stdout.write("\033]1337;File=inline=1;preserveAspectRatio=1:")
+
+        # Wezterm's protocol requires the Base64 data to be sent in chunks
+        idx = 0
+        while idx < len(data):
+            chunk = data[idx : idx + CHUNK_SIZE]
+            idx += CHUNK_SIZE
+            sys.stdout.write(chunk)
+
+        sys.stdout.write("\a")  # Use `\a` (BELL) to terminate the sequence
+        sys.stdout.write("\n")
+        sys.stdout.flush()
+
+    def show(self, fig, **kwargs):
+        return self.render(fig.to_dict(), **kwargs)
+
+
 # Register the KittyRenderer with Plotly so it's available for explicit use
+pio.renderers["wezterm"] = WeztermRenderer()
 pio.renderers["kitty"] = KittyRenderer()
 
 # --- Conditionally set default renderer ---
@@ -77,12 +131,14 @@ pio.renderers["kitty"] = KittyRenderer()
 # Otherwise, let Plotly (or the environment like Jupyter/VSCode) decide the default.
 try:
     from IPython import get_ipython
+
     shell = get_ipython()
     # Check if we are in an IPython shell and it's a TerminalInteractiveShell
-    if shell is not None and shell.__class__.__name__ == 'TerminalInteractiveShell':
-        # Check for Kitty terminal environment variable
+    if shell is not None and shell.__class__.__name__ == "TerminalInteractiveShell":
         if os.environ.get("KITTY_WINDOW_ID"):
             pio.renderers.default = "kitty"
+        elif os.environ.get("WEZTERM_PANE"):
+            pio.renderers.default = "wezterm"
 except (ImportError, NameError, AttributeError):
     # IPython not available, or get_ipython issue, or shell has no __class__.
     # Do nothing, Plotly will use its own default logic.
@@ -130,5 +186,5 @@ __all__ = [
     "Table",
     "Live",
     "Console",
-    "print"
+    "print",
 ]

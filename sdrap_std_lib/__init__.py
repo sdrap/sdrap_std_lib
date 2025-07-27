@@ -99,25 +99,9 @@ class WeztermRenderer(ExternalRenderer):
         return self.render(fig.to_dict(), **kwargs)
 
 
-class StreamlitRenderer(ExternalRenderer):
-    def __init__(self):
-        pass
-
-    def render(self, fig_dict, **kwargs):
-        import json
-
-        with open(PLOT_FILE, "w") as f:
-            json.dump(fig_dict, f)
-        print(f"Plotly figure saved to '{PLOT_FILE}' for Streamlit viewer.")
-
-    def show(self, fig, **kwargs):
-        return self.render(fig.to_dict(), **kwargs)
-
-
 # Register the renderers
 pio.renderers["wezterm"] = WeztermRenderer()
 pio.renderers["kitty"] = KittyRenderer()
-pio.renderers["streamlit"] = StreamlitRenderer()
 
 
 # --- Conditionally set default renderer ---
@@ -165,7 +149,6 @@ __all__ = [
     "tqdm",
     "KittyRenderer",
     "WeztermRenderer",
-    "StreamlitRenderer",
     "plt_colors",
     "plt_dark_color",
     "rich",
@@ -176,26 +159,3 @@ __all__ = [
     "Console",
     "print",
 ]
-
-
-def serve_streamlit_app():
-    """
-    Launch the Streamlit app to view live plots.
-    This function should be run from the command line, not in an IPython session.
-    """
-    app_path = os.path.join(os.path.dirname(__file__), "_streamlit_viewer.py")
-    if not os.path.exists(app_path):
-        print(f"Error: Streamlit app file not found at {app_path}", file=sys.stderr)
-        sys.exit(1)
-
-    try:
-        subprocess.run(["streamlit", "run", app_path], check=True)
-    except FileNotFoundError:
-        print(
-            "Error: 'streamlit' command not found. Please install Streamlit.",
-            file=sys.stderr,
-        )
-        sys.exit(1)
-    except subprocess.CalledProcessError as e:
-        print(f"Error starting Streamlit app: {e}", file=sys.stderr)
-        sys.exit(1)
